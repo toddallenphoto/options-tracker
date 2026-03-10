@@ -2,8 +2,7 @@ name = "options-tracker-worker"
 main = "worker/src/index.js"
 compatibility_date = "2024-01-01"
 
-[build]
-command = "cd frontend && npm run build"
-
-[[pages_build_output_dir]]
-directory = "frontend/dist"
+[[d1_databases]]
+binding = "DB"
+database_name = "options-tracker-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"

@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS trades (
+  id TEXT PRIMARY KEY,
+  ticker TEXT,
+  strategy TEXT,
+  account TEXT,
+  open_date TEXT,
+  exp_date TEXT,
+  leg1_strike REAL, leg1_type TEXT, leg1_action TEXT, leg1_premium REAL, leg1_expiry TEXT,
+  leg2_strike REAL, leg2_type TEXT, leg2_action TEXT, leg2_premium REAL, leg2_expiry TEXT,
+  leg3_strike REAL, leg3_type TEXT, leg3_action TEXT, leg3_premium REAL,
+  leg4_strike REAL, leg4_type TEXT, leg4_action TEXT, leg4_premium REAL,
+  contracts REAL,
+  net_premium REAL,
+  stock_price REAL,
+  close_date TEXT,
+  close_price REAL,
+  status TEXT,
+  target_close REAL,
+  stop_loss REAL,
+  notes TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
