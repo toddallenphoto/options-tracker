@@ -51,9 +51,17 @@ function PayoffChart({ trade }) {
   const prices  = Array.from({ length: N }, (_, i) => minPrice + (i / (N - 1)) * (maxPrice - minPrice));
   const payoffs = computePayoff(trade, prices);
 
-  const maxPnl = Math.max(...payoffs, 0);
-  const minPnl = Math.min(...payoffs, 0);
-  const pnlRange = maxPnl - minPnl || 1;
+  // Theoretical extremes: include S=0 (full put assignment) and S=maxPrice×4 (unbounded call)
+  // These are kept separate so the visual chart range stays centered on the stock price.
+  const statPrices  = [0, ...prices, maxPrice * 2, maxPrice * 4];
+  const statPayoffs = computePayoff(trade, statPrices);
+  const maxPnl = Math.max(...statPayoffs, 0);
+  const minPnl = Math.min(...statPayoffs, 0);
+
+  // Y-axis scale uses only the visible range payoffs so the chart isn't squashed
+  const visMaxPnl = Math.max(...payoffs, 0);
+  const visMinPnl = Math.min(...payoffs, 0);
+  const pnlRange = (visMaxPnl - visMinPnl) || 1;
 
   const W = 580, H = 280;
   const pL = 72, pR = 20, pT = 24, pB = 44;
@@ -61,7 +69,7 @@ function PayoffChart({ trade }) {
   const cH = H - pT - pB;
 
   const xS = p  => pL + ((p - minPrice) / (maxPrice - minPrice)) * cW;
-  const yS = v  => pT + (1 - (v - minPnl) / pnlRange) * cH;
+  const yS = v  => pT + (1 - (v - visMinPnl) / pnlRange) * cH;
   const zeroY   = yS(0);
 
   const pts     = prices.map((p, i) => `${xS(p).toFixed(1)},${yS(payoffs[i]).toFixed(1)}`).join(' ');
@@ -77,8 +85,8 @@ function PayoffChart({ trade }) {
     }
   }
 
-  // P&L axis grid (5 lines)
-  const gridVals = Array.from({ length: 5 }, (_, i) => minPnl + (i / 4) * pnlRange);
+  // P&L axis grid (5 lines) — uses visible range so grid isn't squashed
+  const gridVals = Array.from({ length: 5 }, (_, i) => visMinPnl + (i / 4) * pnlRange);
 
   const fmtY = (v) => {
     const abs = Math.abs(v);
