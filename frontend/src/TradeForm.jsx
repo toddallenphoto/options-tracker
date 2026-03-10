@@ -120,7 +120,7 @@ export default function TradeForm({ trade, onSave, onClose }) {
     }}>
       <div style={{
         background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12,
-        padding: 28, width: 660, maxHeight: '92vh', overflowY: 'auto',
+        padding: 28, width: 760, maxHeight: '92vh', overflowY: 'auto',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
           <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: 17 }}>
@@ -225,31 +225,42 @@ export default function TradeForm({ trade, onSave, onClose }) {
 
 function LegRow({ n, form, set, showExpiry }) {
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', background: '#020817', borderRadius: 6, padding: '8px 10px', marginBottom: 6 }}>
-      <span style={{ color: '#475569', fontSize: 11, fontWeight: 700, minWidth: 36, paddingBottom: 6 }}>LEG {n}</span>
-      <Field label="Action" compact>
-        <select value={form[`leg${n}_action`]} onChange={set(`leg${n}_action`)} style={inp}>
-          <option value="SELL">SELL</option>
-          <option value="BUY">BUY</option>
-        </select>
-      </Field>
-      <Field label="Type" compact>
-        <select value={form[`leg${n}_type`]} onChange={set(`leg${n}_type`)} style={inp}>
-          <option value="P">Put</option>
-          <option value="C">Call</option>
-        </select>
-      </Field>
-      <Field label="Strike" compact>
-        <input type="number" step="0.5" value={form[`leg${n}_strike`]} onChange={set(`leg${n}_strike`)} style={inp} placeholder="0" />
-      </Field>
-      <Field label="Premium" compact>
-        <input type="number" step="0.01" value={form[`leg${n}_premium`]} onChange={set(`leg${n}_premium`)} style={inp} placeholder="0.00" />
-      </Field>
-      {showExpiry && (
-        <Field label="Expiry" compact>
-          <input type="date" value={form[`leg${n}_expiry`]} onChange={set(`leg${n}_expiry`)} style={inp} />
+    <div style={{ background: '#020817', borderRadius: 6, padding: '10px 12px', marginBottom: 6 }}>
+      {/* Sub-row 1: label + action + type */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 8 }}>
+        <span style={{
+          color: '#38bdf8', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+          minWidth: 44, paddingBottom: 7, textTransform: 'uppercase',
+        }}>
+          Leg {n}
+        </span>
+        <Field label="Action" compact>
+          <select value={form[`leg${n}_action`]} onChange={set(`leg${n}_action`)} style={{ ...inp, minWidth: 80 }}>
+            <option value="SELL">SELL</option>
+            <option value="BUY">BUY</option>
+          </select>
         </Field>
-      )}
+        <Field label="Type" compact>
+          <select value={form[`leg${n}_type`]} onChange={set(`leg${n}_type`)} style={{ ...inp, minWidth: 80 }}>
+            <option value="P">Put</option>
+            <option value="C">Call</option>
+          </select>
+        </Field>
+      </div>
+      {/* Sub-row 2: strike + premium + expiry */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', paddingLeft: 54 }}>
+        <Field label="Strike">
+          <input type="number" step="0.5" value={form[`leg${n}_strike`]} onChange={set(`leg${n}_strike`)} style={inp} placeholder="0.00" />
+        </Field>
+        <Field label="Premium">
+          <input type="number" step="0.01" value={form[`leg${n}_premium`]} onChange={set(`leg${n}_premium`)} style={inp} placeholder="0.00" />
+        </Field>
+        {showExpiry && (
+          <Field label="Expiry">
+            <input type="date" value={form[`leg${n}_expiry`]} onChange={set(`leg${n}_expiry`)} style={inp} />
+          </Field>
+        )}
+      </div>
     </div>
   );
 }

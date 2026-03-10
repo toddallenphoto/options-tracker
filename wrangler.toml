@@ -5,4 +5,4 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "options-tracker-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "bdc0e9d2-5dc6-4b1b-aaf6-8c1c5c8a9d84"
