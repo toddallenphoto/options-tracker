@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>0DTE Morning Brief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #020817;
+      --surface:   #0c1428;
+      --surface2:  #0f1e35;
+      --border:    #1a2d4a;
+      --border2:   #1f3a60;
+      --accent:    #3b82f6;
+      --accent2:   #60a5fa;
+      --green:     #22c55e;
+      --green-dim: #15803d;
+      --amber:     #f59e0b;
+      --amber-dim: #b45309;
+      --red:       #ef4444;
+      --red-dim:   #b91c1c;
+      --cyan:      #06b6d4;
+      --purple:    #a855f7;
+      --text:      #e2e8f0;
+      --text-dim:  #94a3b8;
+      --text-mute: #475569;
+      --mono:      'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* subtle grid bg */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(2,8,23,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.05em;
+    }
+
+    .header-subtitle {
+      font-size: 11px;
+      color: var(--text-mute);
+      letter-spacing: 0.05em;
+    }
+
+    .clock {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent2);
+      letter-spacing: 0.05em;
+      tabular-nums: all;
+    }
+
+    .clock-label {
+      font-size: 10px;
+      color: var(--text-mute);
+      text-align: right;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ─── PROGRESS BAR ─── */
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      width: 100%;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      transition: width 1s linear;
+    }
+
+    /* ─── MAIN LAYOUT ─── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* ─── PHASE HEADER ─── */
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .phase-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+      letter-spacing: 0;
+    }
+
+    .phase-num.blue   { background: var(--accent);  color: #fff; }
+    .phase-num.green  { background: var(--green);   color: #fff; }
+    .phase-num.amber  { background: var(--amber);   color: #000; }
+    .phase-num.cyan   { background: var(--cyan);    color: #000; }
+    .phase-num.purple { background: var(--purple);  color: #fff; }
+
+    .phase-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+
+    .phase-time {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-mute);
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+    }
+
+    /* ─── CARD ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .card-body {
+      padding: 14px;
+    }
+
+    /* ─── STEP LIST ─── */
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--bg);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+
+    .step:hover {
+      border-color: var(--border2);
+      background: var(--surface);
+    }
+
+    .step.done {
+      border-color: var(--green-dim);
+      background: rgba(34,197,94,0.05);
+      opacity: 0.75;
+    }
+
+    .step.done .step-text {
+      text-decoration: line-through;
+      color: var(--text-mute);
+    }
+
+    .step-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      border: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      background: var(--surface);
+      transition: all 0.15s;
+    }
+
+    .step.done .step-check {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .step.done .step-check::after {
+      content: '✓';
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .step-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .step-text {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .step-sub {
+      font-size: 11px;
+      color: var(--text-mute);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    .step-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      text-decoration: none;
+      padding: 2px 7px;
+      border: 1px solid rgba(96,165,250,0.3);
+      border-radius: 3px;
+      margin-top: 6px;
+      transition: all 0.15s;
+    }
+
+    .step-link:hover {
+      background: rgba(96,165,250,0.1);
+      border-color: var(--accent2);
+    }
+
+    .step-link::after {
+      content: '↗';
+    }
+
+    /* ─── INPUT FIELDS ─── */
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .input-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-mute);
+    }
+
+    .input-field input, .input-field select {
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 6px 10px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .input-field input:focus, .input-field select:focus {
+      border-color: var(--accent);
+    }
+
+    .input-field input::placeholder {
+      color: var(--text-mute);
+    }
+
+    /* ─── GEX REGIME ─── */
+    .regime-toggle {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .regime-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border2);
+      background: var(--bg);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .regime-btn.pos.active  { background: rgba(34,197,94,0.15); border-color: var(--green);  color: var(--green); }
+    .regime-btn.neg.active  { background: rgba(239,68,68,0.15);  border-color: var(--red);   color: var(--red); }
+    .regime-btn:hover       { border-color: var(--border2); background: var(--surface); }
+
+    /* ─── VIX1D METER ─── */
+    .vix-meter-wrap {
+      margin-top: 10px;
+    }
+
+    .vix-track {
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--green) 0%, var(--green) 25%, var(--amber) 50%, var(--red) 80%, #9333ea 100%);
+      position: relative;
+      margin-bottom: 4px;
+    }
+
+    .vix-cursor {
+      position: absolute;
+      top: -3px;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 0 2px var(--accent);
+      transition: left 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    .vix-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--text-mute);
+      margin-top: 6px;
+    }
+
+    .vix-reading {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .vix-val {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .vix-signal {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 3px;
+    }
+
+    /* ─── SYNTHESIS BOX ─── */
+    .synthesis {
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      min-height: 70px;
+      outline: none;
+    }
+
+    .synthesis[contenteditable]:empty::before {
+      content: 'Describe today\'s setup in plain language...\n\nExample: "Positive GEX day. VIX1D 16. Watch for extension below 6780 overnight low → reversal → BCS. Phase 2 butterfly targeting +GEX at 6800. Condor if SPX rips to gamma wall 6820."';
+      color: var(--text-mute);
+      pointer-events: none;
+    }
+
+    /* ─── DECISION TABLE ─── */
+    .decision-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .decision-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .decision-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--text);
+    }
+
+    .decision-table tr:last-child td { border-bottom: none; }
+    .decision-table tr:hover td { background: var(--surface2); }
+
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .tag.green  { background: rgba(34,197,94,0.15);  color: var(--green); }
+    .tag.red    { background: rgba(239,68,68,0.15);   color: var(--red); }
+    .tag.amber  { background: rgba(245,158,11,0.15);  color: var(--amber); }
+    .tag.blue   { background: rgba(59,130,246,0.15);  color: var(--accent2); }
+    .tag.purple { background: rgba(168,85,247,0.15);  color: var(--purple); }
+    .tag.cyan   { background: rgba(6,182,212,0.15);   color: var(--cyan); }
+
+    /* ─── NO TRADE ─── */
+    .no-trade-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .no-trade-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .no-trade-item::before {
+      content: '✕';
+      color: var(--red);
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ─── RESET ─── */
+    .btn-reset {
+      display: block;
+      margin: 20px auto 0;
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--text-mute);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 7px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-reset:hover {
+      border-color: var(--accent);
+      color: var(--accent2);
+    }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ─── STATUS INDICATOR ─── */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 640px) {
+      .no-trade-grid { grid-template-columns: 1fr; }
+      .input-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <span class="logo-badge">0DTE</span>
+    <div>
+      <div class="header-title">Morning Brief</div>
+      <div class="header-subtitle">Convert the Vert — Pre-Market Checklist</div>
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="clock-label">Pacific Time</div>
+  </div>
+</header>
+
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- ═══ PHASE 1: LAYER 1 — ES RANGE ═══ -->
+  <div class="phase-header">
+    <div class="phase-num blue">1</div>
+    <div>
+      <div class="phase-label">Layer 1 — ES Overnight Range</div>
+    </div>
+    <div class="phase-time">5:30 AM PT</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Record ES Levels</span>
+      <a href="https://www.tradingview.com/chart/?symbol=CME_MINI%3AES1%21" target="_blank" class="step-link">TradingView ES</a>
+    </div>
+    <div class="card-body">
+      <div class="input-grid">
+        <div class="input-field">
+          <label class="input-label">ES Overnight High</label>
+          <input type="number" id="esHigh" placeholder="e.g. 6795" />
+        </div>
+        <div class="input-field">
+          <label class="input-label">ES Overnight Low</label>
+          <input type="number" id="esLow" placeholder="e.g. 6780" />
+        </div>
+        <div class="input-field">
+          <label class="input-label">Range Width (auto)</label>
+          <input type="text" id="esRange" placeholder="—" readonly style="color:var(--accent2);" />
+        </div>
+        <div class="input-field">
+          <label class="input-label">ES Direction into Open</label>
+          <select id="esDir">
+            <option value="">Select...</option>
+            <option value="up">Moving Up</option>
+            <option value="down">Moving Down</option>
+            <option value="flat">Flat / Choppy</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px;" class="step-list">
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Range ≥ 15 points → directional day likely, strong setup potential</div>
+            <div class="step-sub">Range &lt; 10 points → chop day likely. Consider no-trade unless VIX1D confirms.</div>
+          </div>
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Note the premarket high — this is the confirmation level for the bull reversal entry</div>
+            <div class="step-sub">Breaking back above the premarket high after the opening flush = institutional confirmation of reversal.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PHASE 2: LAYER 2 — VIX1D ═══ -->
+  <div class="phase-header" style="margin-top:20px;">
+    <div class="phase-num cyan">2</div>
+    <div>
+      <div class="phase-label">Layer 2 — VIX1D Expected Range</div>
+    </div>
+    <div class="phase-time">5:35 AM PT — 10 seconds</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">VIX1D Reading</span>
+      <div style="display:flex;gap:8px;">
+        <a href="https://www.cboe.com/us/indices/dashboard/VIX1D/" target="_blank" class="step-link">CBOE VIX1D</a>
+        <a href="https://www.tradingview.com/chart/?symbol=CBOE%3AVIX1D" target="_blank" class="step-link">TradingView</a>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="vix-reading">
+        <div class="vix-val" id="vixVal" style="color:var(--text-mute);">—</div>
+        <div class="vix-signal tag" id="vixSignal"></div>
+      </div>
+      <div class="vix-meter-wrap">
+        <div class="vix-track">
+          <div class="vix-cursor" id="vixCursor" style="left:0%"></div>
+        </div>
+        <div class="vix-labels">
+          <span>0</span><span style="color:var(--green)">10 ▸ Low</span><span style="color:var(--amber)">20 ▸ Elevated</span><span style="color:var(--red)">28 ▸ Extreme</span><span>35+</span>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <label class="input-label" style="display:block;margin-bottom:4px;">Enter VIX1D value</label>
+        <input type="number" id="vixInput" placeholder="e.g. 16" step="0.1"
+          style="background:var(--bg);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:16px;padding:6px 10px;width:120px;outline:none;"
+          oninput="updateVIX(this.value)" />
+      </div>
+      <div style="margin-top:10px;" class="step-list">
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">VIX1D spike vs VIX = single-day event priced (FOMC, CPI) → treat as special situation</div>
+            <div class="step-sub">If VIX1D is 20+ while regular VIX is 15 or below, a single-day event is being priced. Apply FOMC/data rules.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PHASE 3: LAYER 3 — GEX MAP ═══ -->
+  <div class="phase-header" style="margin-top:20px;">
+    <div class="phase-num purple">3</div>
+    <div>
+      <div class="phase-label">Layer 3 — GEX Gamma Map</div>
+    </div>
+    <div class="phase-time">5:40 AM PT — 3-4 min</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Gamma Exposure Levels</span>
+      <div style="display:flex;gap:8px;">
+        <a href="https://spotgamma.com/free-spy-gex-tool/" target="_blank" class="step-link">SpotGamma</a>
+        <a href="https://www.barchart.com/stocks/quotes/$SPX/gamma-exposure" target="_blank" class="step-link">Barchart GEX</a>
+        <a href="https://menthorq.com/tool/gex/" target="_blank" class="step-link">MenthorQ</a>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <div style="margin-bottom:10px;">
+        <div class="input-label" style="margin-bottom:6px;">Net GEX Regime Today</div>
+        <div class="regime-toggle">
+          <button class="regime-btn pos" id="btnPos" onclick="setRegime('pos')">
+            ▲ POSITIVE GEX<br><span style="font-weight:400;font-size:9px;letter-spacing:0">Mean-reverting · Butterfly favored</span>
+          </button>
+          <button class="regime-btn neg" id="btnNeg" onclick="setRegime('neg')">
+            ▼ NEGATIVE GEX<br><span style="font-weight:400;font-size:9px;letter-spacing:0">Trending · Condor favored</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="input-grid" style="margin-top:12px;">
+        <div class="input-field">
+          <label class="input-label">+GEX Strike (Bull Target)</label>
+          <input type="number" id="gexPlus" placeholder="e.g. 6800" />
+        </div>
+        <div class="input-field">
+          <label class="input-label">-GEX Strike (Bear Target)</label>
+          <input type="number" id="gexMinus" placeholder="e.g. 6755" />
+        </div>
+        <div class="input-field">
+          <label class="input-label">Gamma Wall (Ceiling/Floor)</label>
+          <input type="number" id="gexWall" placeholder="e.g. 6820" />
+        </div>
+        <div class="input-field">
+          <label class="input-label">GEX Transition Zone</label>
+          <input type="number" id="gexTrans" placeholder="e.g. 6775" />
+        </div>
+      </div>
+
+      <div style="margin-top:12px;" class="step-list">
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">+GEX → Phase 2 butterfly centered near +GEX strike on bull days</div>
+            <div class="step-sub">When SPX reaches the +GEX level and shows a 1-min reversal candle → this is the conversion signal. Institutional profit-taking is entering here.</div>
+          </div>
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Gamma wall acts as natural ceiling/floor — expect stall or sharp bounce</div>
+            <div class="step-sub">If SPX rips past +GEX toward gamma wall → convert to condor with profit zone bracketing the wall level.</div>
+          </div>
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Transition zone = key inflection — break above means trending day</div>
+            <div class="step-sub">If SPX opens above transition zone and holds → consider no bull reversal entry. The mean-reversion premise is weakened.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PHASE 4: SYNTHESIS ═══ -->
+  <div class="phase-header" style="margin-top:20px;">
+    <div class="phase-num amber">4</div>
+    <div>
+      <div class="phase-label">Pre-Market Synthesis — Write the Day's Plan</div>
+    </div>
+    <div class="phase-time">6:00 AM PT</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Today's Trading Plan</span>
+      <span class="tag blue" id="synthTag">Draft</span>
+    </div>
+    <div class="card-body">
+      <div
+        id="synthesis"
+        class="synthesis"
+        contenteditable="true"
+        spellcheck="false"
+        oninput="saveSynthesis()"
+      ></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--text-mute);">
+        Example: "Positive GEX day. VIX1D 16 — normal conditions. Watch for extension below 6780 overnight low → reversal → BCS entry. Phase 2 butterfly centered at +GEX 6800. Condor if SPX rips to gamma wall 6820. Two contracts base size."
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PHASE 5: MARKET OPEN ═══ -->
+  <div class="phase-header" style="margin-top:20px;">
+    <div class="phase-num green">5</div>
+    <div>
+      <div class="phase-label">Market Open — Execution Checklist</div>
+    </div>
+    <div class="phase-time">6:30 AM → 12:00 PM PT</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Time-Gated Steps</span>
+    </div>
+    <div class="card-body">
+      <div class="step-list">
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-mute);padding:4px 0 2px;">
+          6:30 AM — Market Opens
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Open 1-min SPX chart — watch only, no entries for 30 minutes</div>
+            <div class="step-sub">Let the opening drive complete. The market is discovering price — not establishing direction. No exceptions.</div>
+            <a href="https://www.tradingview.com/chart/?symbol=CBOE%3ASPX&interval=1" target="_blank" class="step-link">1-Min SPX Chart</a>
+          </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-mute);padding:8px 0 2px;">
+          7:00 AM — Primary Window Opens
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">SPX extended beyond overnight range? Watch for reversal at overnight low/high</div>
+            <div class="step-sub">Extension below overnight low → watch for bull reversal. Extension above overnight high → watch for bear reversal. No extension → no setup yet.</div>
+          </div>
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Confirmed reversal candle at key level (overnight high/low OR GEX level)?</div>
+            <div class="step-sub">1) Price tests known level · 2) Exhaustion visible on 1-min · 3) Reversal candle closes with conviction · 4) Follow-through candle confirms · → ENTER Phase 1</div>
+          </div>
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Enter Phase 1 — 2× BCS (bull) or BPS (bear), $10-wide, $1.50-2.00 premium</div>
+            <div class="step-sub">Long strike just below/above current price. Short strike 10-15 pts away. Always start at 2 contracts regardless of conviction.</div>
+          </div>
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Set 50% stop immediately after fill — no exceptions</div>
+            <div class="step-sub">Entry at $1.80 → cut if spread reaches $0.90. Maximum loss $180. The market is telling you the read was wrong. Cut immediately, no averaging down.</div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-mute);padding:8px 0 2px;">
+          Phase 2 — The Conversion (when profitable)
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">SPX reaches +GEX / target AND shows 1-min consolidation → BUTTERFLY</div>
+            <div class="step-sub">Sell adjacent $10-wide spread at same short strike level. Net credit after Phase 1 cost = guaranteed floor (~$400). Walk away.</div>
+          </div>
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">SPX rips past target toward gamma wall, topping signal → CONDOR</div>
+            <div class="step-sub">Sell spread 20 pts above current strikes. Net credit = $300 guaranteed. 20-pt profit zone — wide enough to ignore afternoon chop. Walk away.</div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-mute);padding:8px 0 2px;">
+          9:00 AM — Breakfast (NO SCREENS)
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Step away from desk physically. Converted structure runs itself.</div>
+            <div class="step-sub">Lunchtime chop in New York is the worst window to trade. You are having breakfast. The structure does not need management. Nothing to watch.</div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-mute);padding:8px 0 2px;">
+          10:00 AM — Secondary Window
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">Assess second trade — has GEX regime shifted? Reversal in opposite direction?</div>
+            <div class="step-sub">Same entry standard as morning. Confirmed reversal candle at key level. Do not force a trade because the morning was quiet.</div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-mute);padding:8px 0 2px;">
+          12:00 PM — STOP
+        </div>
+        <div class="step" onclick="toggleStep(this)">
+          <div class="step-check"></div>
+          <div class="step-content">
+            <div class="step-text">No new entries. Danger zone. Existing structures expire on their own.</div>
+            <div class="step-sub">Gamma is at maximum. Moves are fast and non-directional. Spreads are wide. The asymmetry is not in your favor for new entries.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONVERSION QUICK REF ═══ -->
+  <div class="divider"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Phase 2 Conversion Reference</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <table class="decision-table">
+        <thead>
+          <tr>
+            <th>Signal</th>
+            <th>GEX Context</th>
+            <th>Conversion</th>
+            <th>Floor</th>
+            <th>Profit Zone</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SPX reaches +GEX level, consolidates</td>
+            <td><span class="tag green">+ Positive</span></td>
+            <td><span class="tag blue">Butterfly</span></td>
+            <td><span style="color:var(--green)">~$400</span></td>
+            <td>Single pin, max $2,400</td>
+          </tr>
+          <tr>
+            <td>SPX rips to gamma wall, topping signal</td>
+            <td><span class="tag red">− Negative</span></td>
+            <td><span class="tag cyan">Condor</span></td>
+            <td><span style="color:var(--green)">~$300</span></td>
+            <td>20-pt zone, max $2,300</td>
+          </tr>
+          <tr>
+            <td>Very large move (40+ pts), deep ITM</td>
+            <td>Either</td>
+            <td><span class="tag purple">BWB (Adv)</span></td>
+            <td><span style="color:var(--green)">~$480+</span></td>
+            <td>Asymmetric — paper first</td>
+          </tr>
+          <tr>
+            <td>Move stalls mid-range, insufficient premium</td>
+            <td>Either</td>
+            <td><span class="tag amber">Hold</span></td>
+            <td>None yet</td>
+            <td>Wait for continuation or cut at 50%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ NO-TRADE CONDITIONS ═══ -->
+  <div class="card" style="margin-top:12px;">
+    <div class="card-header">
+      <span class="card-title">No-Trade Conditions — Check Before Any Entry</span>
+    </div>
+    <div class="card-body">
+      <div class="no-trade-grid">
+        <div class="no-trade-item">Meeting risk today — cannot watch 1-min chart</div>
+        <div class="no-trade-item">No clear overnight range (tight / choppy pre-market)</div>
+        <div class="no-trade-item">SPX opened flat, grinding inside overnight range</div>
+        <div class="no-trade-item">Already stopped out today</div>
+        <div class="no-trade-item">FOMC afternoon (flat by 10:30 AM PT)</div>
+        <div class="no-trade-item">Major gap day — overnight levels invalidated</div>
+        <div class="no-trade-item">VIX1D spike with VIX flat — single-day event risk</div>
+        <div class="no-trade-item">Only danger zone window available (after 12 PM PT)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RESET ═══ -->
+  <button class="btn-reset" onclick="resetAll()">↺ RESET CHECKLIST FOR NEW SESSION</button>
+
+</main>
+
+<script>
+  // ─── CLOCK ───
+  function updateClock() {
+    const now = new Date();
+    const pt = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).format(now);
+    document.getElementById('clock').textContent = pt;
+
+    // Progress bar: track 5:30-12:00 PT window
+    const [h, m, s] = pt.split(':').map(Number);
+    const totalMins = h * 60 + m;
+    const startMins = 5 * 60 + 30;
+    const endMins   = 12 * 60;
+    const pct = Math.max(0, Math.min(100, (totalMins - startMins) / (endMins - startMins) * 100));
+    document.getElementById('progressFill').style.width = pct + '%';
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ─── ES RANGE ───
+  document.getElementById('esHigh').addEventListener('input', calcRange);
+  document.getElementById('esLow').addEventListener('input', calcRange);
+
+  function calcRange() {
+    const h = parseFloat(document.getElementById('esHigh').value);
+    const l = parseFloat(document.getElementById('esLow').value);
+    if (!isNaN(h) && !isNaN(l) && h > l) {
+      const w = (h - l).toFixed(1);
+      const el = document.getElementById('esRange');
+      el.value = w + ' pts';
+      el.style.color = w >= 15 ? 'var(--green)' : w >= 10 ? 'var(--amber)' : 'var(--red)';
+    }
+  }
+
+  // ─── VIX1D ───
+  function updateVIX(val) {
+    const v = parseFloat(val);
+    const valEl = document.getElementById('vixVal');
+    const sigEl = document.getElementById('vixSignal');
+    const curEl = document.getElementById('vixCursor');
+    if (isNaN(v)) { valEl.textContent = '—'; sigEl.textContent = ''; return; }
+
+    valEl.textContent = v.toFixed(1);
+    const pct = Math.min(100, Math.max(0, (v / 35) * 100));
+    curEl.style.left = pct + '%';
+
+    let label, color, bg;
+    if (v < 10)      { label = 'Low Vol — Possible No-Trade';    color = 'var(--text-mute)'; bg = 'rgba(148,163,184,0.1)'; }
+    else if (v < 15) { label = 'Normal — Standard Setup';        color = 'var(--green)';     bg = 'rgba(34,197,94,0.15)'; }
+    else if (v < 20) { label = 'Elevated — Good Conditions';     color = 'var(--green)';     bg = 'rgba(34,197,94,0.15)'; }
+    else if (v < 28) { label = 'High — Strong Moves Expected';   color = 'var(--amber)';     bg = 'rgba(245,158,11,0.15)';}
+    else             { label = 'Extreme — Condor Preferred';     color = 'var(--red)';       bg = 'rgba(239,68,68,0.15)'; }
+
+    valEl.style.color = color;
+    sigEl.textContent  = label;
+    sigEl.style.color  = color;
+    sigEl.style.background = bg;
+  }
+
+  // ─── GEX REGIME ───
+  let currentRegime = null;
+  function setRegime(r) {
+    currentRegime = r;
+    document.getElementById('btnPos').classList.toggle('active', r === 'pos');
+    document.getElementById('btnNeg').classList.toggle('active', r === 'neg');
+    localStorage.setItem('0dte_regime', r);
+  }
+
+  // ─── STEP TOGGLE ───
+  function toggleStep(el) {
+    el.classList.toggle('done');
+    saveChecklist();
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const all  = document.querySelectorAll('.step').length;
+    const done = document.querySelectorAll('.step.done').length;
+    const pct  = all > 0 ? (done / all) * 100 : 0;
+    // secondary fill indicator in header — reuse progress bar
+  }
+
+  // ─── SYNTHESIS ───
+  function saveSynthesis() {
+    const text = document.getElementById('synthesis').textContent;
+    localStorage.setItem('0dte_synthesis', text);
+    document.getElementById('synthTag').textContent = text.length > 5 ? 'Ready' : 'Draft';
+    document.getElementById('synthTag').className = 'tag ' + (text.length > 5 ? 'green' : 'blue');
+  }
+
+  // ─── PERSIST STATE ───
+  function saveChecklist() {
+    const steps = document.querySelectorAll('.step');
+    const states = Array.from(steps).map(s => s.classList.contains('done'));
+    localStorage.setItem('0dte_steps', JSON.stringify(states));
+  }
+
+  function loadState() {
+    // Steps
+    try {
+      const states = JSON.parse(localStorage.getItem('0dte_steps') || '[]');
+      const steps  = document.querySelectorAll('.step');
+      states.forEach((done, i) => { if (done && steps[i]) steps[i].classList.add('done'); });
+    } catch(e) {}
+
+    // Synthesis
+    const synth = localStorage.getItem('0dte_synthesis');
+    if (synth) {
+      document.getElementById('synthesis').textContent = synth;
+      saveSynthesis();
+    }
+
+    // GEX regime
+    const regime = localStorage.getItem('0dte_regime');
+    if (regime) setRegime(regime);
+
+    // Numeric fields
+    ['esHigh','esLow','esDir','gexPlus','gexMinus','gexWall','gexTrans','vixInput'].forEach(id => {
+      const val = localStorage.getItem('0dte_' + id);
+      if (val) {
+        document.getElementById(id).value = val;
+        if (id === 'vixInput') updateVIX(val);
+        if (id === 'esHigh' || id === 'esLow') calcRange();
+      }
+    });
+  }
+
+  // Persist numeric fields on change
+  ['esHigh','esLow','esDir','gexPlus','gexMinus','gexWall','gexTrans'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      localStorage.setItem('0dte_' + id, document.getElementById(id).value);
+    });
+  });
+  document.getElementById('vixInput').addEventListener('input', function() {
+    localStorage.setItem('0dte_vixInput', this.value);
+  });
+
+  // ─── RESET ───
+  function resetAll() {
+    if (!confirm('Reset all checklist items and today\'s data?')) return;
+    ['0dte_steps','0dte_synthesis','0dte_regime',
+     '0dte_esHigh','0dte_esLow','0dte_esDir',
+     '0dte_gexPlus','0dte_gexMinus','0dte_gexWall','0dte_gexTrans','0dte_vixInput'
+    ].forEach(k => localStorage.removeItem(k));
+    location.reload();
+  }
+
+  // ─── INIT ───
+  loadState();
+</script>
+</body>
+</html>
