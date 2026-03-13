@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createTrade, updateTrade } from './api';
 
-const STRATEGIES = ['CSP', 'covered_call', 'put_spread', 'call_spread', 'iron_condor', 'calendar', 'diagonal', 'seagull', 'risk_reversal'];
+const STRATEGIES = ['CSP', 'covered_call', 'put_spread', 'call_spread', 'iron_condor', 'calendar', 'diagonal', 'risk_reversal', 'seagull'];
 const ACCOUNTS   = ['Moomoo', 'IBKR', 'TradeStation'];
 const STATUSES   = ['open', 'closed', 'expired'];
 
