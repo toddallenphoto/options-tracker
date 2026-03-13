@@ -61,6 +61,7 @@ export default function TradeTracker() {
   const [sortDir,       setSortDir]       = useState('desc');
   const [closingTrade,  setClosingTrade]  = useState(null);
   const [summary,       setSummary]       = useState({ total: 0, wins: 0, losses: 0, winCount: 0, lossCount: 0, count: 0 });
+  const [openTrades,    setOpenTrades]    = useState([]);
   const [liveQuotes,    setLiveQuotes]    = useState({});
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [quotesAt,      setQuotesAt]      = useState(null);
@@ -91,8 +92,14 @@ export default function TradeTracker() {
 
   useEffect(() => { loadSummary(); }, [loadSummary]);
 
+  // Always keep open trades for current account — feeds both quotes and unrealized scorecard
+  useEffect(() => {
+    fetchTrades({ account: filterAccount, status: 'open' })
+      .then(d => setOpenTrades(d.trades || []))
+      .catch(() => {});
+  }, [filterAccount]);
+
   const loadQuotes = useCallback(async () => {
-    const openTrades = trades.filter(t => t.status === 'open');
     if (!openTrades.length) { setLiveQuotes({}); return; }
     const symbols = new Set();
     for (const t of openTrades) {
@@ -113,7 +120,7 @@ export default function TradeTracker() {
       setQuotesAt(new Date());
     } catch { /* non-critical */ }
     finally { setQuotesLoading(false); }
-  }, [trades]);
+  }, [openTrades]);
 
   useEffect(() => { loadQuotes(); }, [loadQuotes]);
 
@@ -170,30 +177,49 @@ export default function TradeTracker() {
         <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 20, flexShrink: 0 }}>Trade Tracker</h2>
 
         {/* P&L Scorecard */}
-        {summary.count > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#0a1628', border: '1px solid #1e293b', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-            <div style={{ padding: '6px 16px', borderRight: '1px solid #1e293b' }}>
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#475569', marginBottom: 2 }}>
-                {filterAccount || 'All Accounts'}
-              </div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 18, color: summary.total >= 0 ? '#4ade80' : '#f87171' }}>
-                {summary.total >= 0 ? '+' : ''}${summary.total.toFixed(0)}
-              </div>
+        {(() => {
+          let unrealizedTotal = 0, unrealizedCount = 0;
+          for (const t of openTrades) {
+            const upnl = computeUnrealizedPnL(t, liveQuotes);
+            if (upnl != null) { unrealizedTotal += upnl; unrealizedCount++; }
+          }
+          const hasUnrealized = unrealizedCount > 0;
+          if (summary.count === 0 && !hasUnrealized) return null;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#0a1628', border: '1px solid #1e293b', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+              {summary.count > 0 && (<>
+                <div style={{ padding: '6px 16px', borderRight: '1px solid #1e293b' }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#475569', marginBottom: 2 }}>
+                    {filterAccount || 'All Accounts'}
+                  </div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 18, color: summary.total >= 0 ? '#4ade80' : '#f87171' }}>
+                    {summary.total >= 0 ? '+' : ''}${summary.total.toFixed(0)}
+                  </div>
+                </div>
+                <div style={{ padding: '6px 14px', borderRight: '1px solid #1e293b', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Wins</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#4ade80', fontWeight: 600 }}>
+                    {summary.winCount > 0 ? `+$${summary.wins.toFixed(0)}` : '—'} <span style={{ color: '#334155', fontSize: 11 }}>({summary.winCount})</span>
+                  </div>
+                </div>
+                <div style={{ padding: '6px 14px', borderRight: hasUnrealized ? '1px solid #1e293b' : 'none', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Losses</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: summary.lossCount > 0 ? '#f87171' : '#334155', fontWeight: 600 }}>
+                    {summary.lossCount > 0 ? `-$${Math.abs(summary.losses).toFixed(0)}` : '—'} <span style={{ color: '#334155', fontSize: 11 }}>({summary.lossCount})</span>
+                  </div>
+                </div>
+              </>)}
+              {hasUnrealized && (
+                <div style={{ padding: '6px 14px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Open P&amp;L</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: unrealizedTotal >= 0 ? '#34d399' : '#fb923c' }}>
+                    {unrealizedTotal >= 0 ? '~+' : '~-'}${Math.abs(unrealizedTotal).toFixed(0)} <span style={{ color: '#334155', fontSize: 11 }}>({unrealizedCount})</span>
+                  </div>
+                </div>
+              )}
             </div>
-            <div style={{ padding: '6px 14px', borderRight: '1px solid #1e293b', textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Wins</div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#4ade80', fontWeight: 600 }}>
-                {summary.winCount > 0 ? `+$${summary.wins.toFixed(0)}` : '—'} <span style={{ color: '#334155', fontSize: 11 }}>({summary.winCount})</span>
-              </div>
-            </div>
-            <div style={{ padding: '6px 14px', textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Losses</div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: summary.lossCount > 0 ? '#f87171' : '#334155', fontWeight: 600 }}>
-                {summary.lossCount > 0 ? `-$${Math.abs(summary.losses).toFixed(0)}` : '—'} <span style={{ color: '#334155', fontSize: 11 }}>({summary.lossCount})</span>
-              </div>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <select value={filterAccount} onChange={e => setFilterAccount(e.target.value)} style={selStyle}>
