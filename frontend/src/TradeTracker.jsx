@@ -23,6 +23,33 @@ export default function TradeTracker() {
   const [editTrade,     setEditTrade]     = useState(null);
   const [sortDir,       setSortDir]       = useState('desc');
   const [closingTrade,  setClosingTrade]  = useState(null);
+  const [summary,       setSummary]       = useState({ total: 0, wins: 0, losses: 0, winCount: 0, lossCount: 0, count: 0 });
+
+  // Separate fetch for P&L scorecard — all closed/expired for the selected account
+  const loadSummary = useCallback(async () => {
+    try {
+      const [closed, expired] = await Promise.all([
+        fetchTrades({ account: filterAccount, status: 'closed' }),
+        fetchTrades({ account: filterAccount, status: 'expired' }),
+      ]);
+      const all = [...(closed.trades || []), ...(expired.trades || [])];
+      let total = 0, wins = 0, losses = 0, winCount = 0, lossCount = 0;
+      for (const t of all) {
+        const prem = parseFloat(t.net_premium);
+        const ctrs = parseFloat(t.contracts);
+        if (isNaN(prem) || isNaN(ctrs)) continue;
+        const closeP = t.status === 'expired' && (t.close_price == null || t.close_price === '')
+          ? 0 : parseFloat(t.close_price);
+        if (isNaN(closeP)) continue;
+        const pnl = (prem - closeP) * ctrs * 100;
+        total += pnl;
+        if (pnl >= 0) { wins += pnl; winCount++; } else { losses += pnl; lossCount++; }
+      }
+      setSummary({ total, wins, losses, winCount, lossCount, count: winCount + lossCount });
+    } catch { /* non-critical */ }
+  }, [filterAccount]);
+
+  useEffect(() => { loadSummary(); }, [loadSummary]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,7 +75,7 @@ export default function TradeTracker() {
   const openAdd  = ()      => { setEditTrade(null); setShowForm(true); };
   const openEdit = (trade) => { setEditTrade(trade); setShowForm(true); };
   const closeForm = ()     => { setShowForm(false); setEditTrade(null); };
-  const handleSaved = ()   => { closeForm(); load(); };
+  const handleSaved = ()   => { closeForm(); load(); loadSummary(); };
 
   const fmt = (v, prefix = '') =>
     v != null && v !== '' ? <span style={mono}>{prefix}{v}</span> : <span style={{ color: '#475569' }}>—</span>;
@@ -73,8 +100,35 @@ export default function TradeTracker() {
   return (
     <div>
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-        <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 20 }}>Trade Tracker</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+        <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 20, flexShrink: 0 }}>Trade Tracker</h2>
+
+        {/* P&L Scorecard */}
+        {summary.count > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#0a1628', border: '1px solid #1e293b', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ padding: '6px 16px', borderRight: '1px solid #1e293b' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#475569', marginBottom: 2 }}>
+                {filterAccount || 'All Accounts'}
+              </div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 18, color: summary.total >= 0 ? '#4ade80' : '#f87171' }}>
+                {summary.total >= 0 ? '+' : ''}${summary.total.toFixed(0)}
+              </div>
+            </div>
+            <div style={{ padding: '6px 14px', borderRight: '1px solid #1e293b', textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Wins</div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#4ade80', fontWeight: 600 }}>
+                {summary.winCount > 0 ? `+$${summary.wins.toFixed(0)}` : '—'} <span style={{ color: '#334155', fontSize: 11 }}>({summary.winCount})</span>
+              </div>
+            </div>
+            <div style={{ padding: '6px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Losses</div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: summary.lossCount > 0 ? '#f87171' : '#334155', fontWeight: 600 }}>
+                {summary.lossCount > 0 ? `-$${Math.abs(summary.losses).toFixed(0)}` : '—'} <span style={{ color: '#334155', fontSize: 11 }}>({summary.lossCount})</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <select value={filterAccount} onChange={e => setFilterAccount(e.target.value)} style={selStyle}>
             <option value="">All Accounts</option>
@@ -167,7 +221,7 @@ export default function TradeTracker() {
       {closingTrade && (
         <CloseModal
           trade={closingTrade}
-          onSave={() => { setClosingTrade(null); load(); }}
+          onSave={() => { setClosingTrade(null); load(); loadSummary(); }}
           onClose={() => setClosingTrade(null)}
         />
       )}
