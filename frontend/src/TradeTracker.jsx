@@ -21,6 +21,7 @@ export default function TradeTracker() {
   const [filterStatus,  setFilterStatus]  = useState('open');
   const [showForm,      setShowForm]      = useState(false);
   const [editTrade,     setEditTrade]     = useState(null);
+  const [sortDir,       setSortDir]       = useState('desc');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,13 +87,21 @@ export default function TradeTracker() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: '#0f172a', color: '#64748b' }}>
-                {['Ticker','Strategy','Acct','Open','Exp','Net Prem','Ctrs','Stock Px','Status','Target','Stop','Notes',''].map(h => (
+                {['Ticker','Strategy','Acct'].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                <th style={{ ...thStyle, cursor: 'pointer', userSelect: 'none', color: '#7dd3fc' }}
+                    onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}>
+                  Open {sortDir === 'asc' ? '▲' : '▼'}
+                </th>
+                {['Exp','Net Prem','Ctrs','Stock Px','Status','Target','Stop','Notes',''].map(h => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {trades.map((t, i) => (
+              {[...trades].sort((a, b) => {
+                const da = a.open_date || '', db = b.open_date || '';
+                return sortDir === 'asc' ? da.localeCompare(db) : db.localeCompare(da);
+              }).map((t, i) => (
                 <tr key={t.id}
                   style={{ background: i % 2 === 0 ? '#0a1628' : '#020817', borderBottom: '1px solid #1e293b' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#0f172a'}
