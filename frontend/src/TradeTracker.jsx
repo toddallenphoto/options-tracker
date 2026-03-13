@@ -8,7 +8,7 @@ const STATUSES  = ['open', 'closed', 'expired'];
 const STRATEGY_LABELS = {
   CSP: 'CSP', covered_call: 'Covered Call', put_spread: 'Put Spread',
   call_spread: 'Call Spread', iron_condor: 'Iron Condor',
-  calendar: 'Calendar', diagonal: 'Diagonal', seagull: 'Seagull',
+  calendar: 'Calendar', diagonal: 'Diagonal', seagull: 'Seagull', risk_reversal: 'Risk Reversal',
 };
 
 const mono = { fontFamily: "'JetBrains Mono', monospace" };

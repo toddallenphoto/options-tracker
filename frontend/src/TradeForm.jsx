@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { createTrade, updateTrade } from './api';
 
-const STRATEGIES = ['CSP', 'covered_call', 'put_spread', 'call_spread', 'iron_condor', 'calendar', 'diagonal', 'seagull'];
+const STRATEGIES = ['CSP', 'covered_call', 'put_spread', 'call_spread', 'iron_condor', 'calendar', 'diagonal', 'seagull', 'risk_reversal'];
 const ACCOUNTS   = ['Moomoo', 'IBKR', 'TradeStation'];
 const STATUSES   = ['open', 'closed', 'expired'];
 
 // How many legs each strategy uses
-const LEG_COUNT = { CSP: 1, covered_call: 1, put_spread: 2, call_spread: 2, iron_condor: 4, calendar: 2, diagonal: 2, seagull: 3 };
+const LEG_COUNT = { CSP: 1, covered_call: 1, put_spread: 2, call_spread: 2, iron_condor: 4, calendar: 2, diagonal: 2, seagull: 3, risk_reversal: 2 };
 
 // Default leg action/type per strategy
 const LEG_DEFAULTS = {
@@ -18,6 +18,7 @@ const LEG_DEFAULTS = {
   calendar:     [['SELL','P'], ['BUY','P']],
   diagonal:     [['SELL','P'], ['BUY','P']],
   seagull:      [['SELL','P'], ['BUY','C'], ['SELL','C']],  // OTM put / ATM call / further OTM call
+  risk_reversal:[['SELL','P'], ['BUY','C']],               // OTM put finances ATM/OTM call
 };
 
 const EMPTY = {
