@@ -210,19 +210,23 @@ function Stat({ label, value, color }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+const STATUSES = ['open', 'closed', 'expired'];
+
 export default function OptionsChart() {
-  const [trades,     setTrades]     = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [selectedId, setSelectedId] = useState('');
+  const [trades,        setTrades]        = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [selectedId,    setSelectedId]    = useState('');
+  const [filterStatus,  setFilterStatus]  = useState('open');
 
   useEffect(() => {
-    fetchTrades({ status: 'open' }).then(data => {
+    setLoading(true);
+    fetchTrades({ status: filterStatus }).then(data => {
       const t = data.trades || [];
       setTrades(t);
-      if (t.length > 0) setSelectedId(t[0].id);
+      setSelectedId(t.length > 0 ? t[0].id : '');
       setLoading(false);
     });
-  }, []);
+  }, [filterStatus]);
 
   const trade   = trades.find(t => t.id === selectedId);
   const hasLegs = trade && getStrikes(trade).length > 0;
@@ -235,8 +239,16 @@ export default function OptionsChart() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 20 }}>P&amp;L Diagrams</h2>
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 6, color: '#e2e8f0', padding: '6px 10px', fontSize: 13 }}
+        >
+          <option value="">All Statuses</option>
+          {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
         {!loading && trades.length > 0 && (
           <select
             value={selectedId}
@@ -248,7 +260,7 @@ export default function OptionsChart() {
           >
             {trades.map(t => (
               <option key={t.id} value={t.id}>
-                {t.ticker} · {STRATEGY_LABELS[t.strategy] || t.strategy} · exp {t.exp_date || 'N/A'}
+                {t.ticker} · {STRATEGY_LABELS[t.strategy] || t.strategy} · {t.open_date || 'N/A'}
               </option>
             ))}
           </select>
