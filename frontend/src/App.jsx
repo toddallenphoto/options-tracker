@@ -36,7 +36,20 @@ export default function App() {
         <button onClick={() => setPage('diagrams')} style={navBtn(page === 'diagrams')}>
           P&amp;L Diagrams
         </button>
-        <button onClick={handleLogout} style={{ marginLeft: 'auto', ...navBtn(false) }}>
+        <a
+          href="morning-routine.html"
+          style={{
+            marginLeft: 'auto', padding: '6px 14px', borderRadius: 6,
+            border: '1px solid #1a2d4a', color: '#60a5fa',
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
+            textDecoration: 'none', letterSpacing: '0.05em',
+          }}
+          onMouseEnter={e => { e.target.style.borderColor = '#3b82f6'; e.target.style.color = '#93c5fd'; }}
+          onMouseLeave={e => { e.target.style.borderColor = '#1a2d4a'; e.target.style.color = '#60a5fa'; }}
+        >
+          ↗ MORNING BRIEF
+        </a>
+        <button onClick={handleLogout} style={navBtn(false)}>
           Logout
         </button>
       </nav>
