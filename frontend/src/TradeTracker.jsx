@@ -63,6 +63,7 @@ export default function TradeTracker() {
   const [summary,       setSummary]       = useState({ total: 0, wins: 0, losses: 0, winCount: 0, lossCount: 0, count: 0 });
   const [liveQuotes,    setLiveQuotes]    = useState({});
   const [quotesLoading, setQuotesLoading] = useState(false);
+  const [quotesAt,      setQuotesAt]      = useState(null);
 
   // Separate fetch for P&L scorecard — all closed/expired for the selected account
   const loadSummary = useCallback(async () => {
@@ -109,6 +110,7 @@ export default function TradeTracker() {
     try {
       const data = await fetchOptionQuotes([...symbols]);
       setLiveQuotes(data);
+      setQuotesAt(new Date());
     } catch { /* non-critical */ }
     finally { setQuotesLoading(false); }
   }, [trades]);
@@ -203,7 +205,7 @@ export default function TradeTracker() {
             {STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
           <button onClick={loadQuotes} disabled={quotesLoading} title="Refresh live option quotes (~15 min delayed)" style={{ ...btnPrimary, background: 'none', border: '1px solid #334155', color: quotesLoading ? '#475569' : '#7dd3fc', fontSize: 13, padding: '7px 12px' }}>
-            {quotesLoading ? '…' : '↻'} Quotes
+            {quotesLoading ? '…' : '↻'} Quotes{quotesAt && !quotesLoading ? <span style={{ color: '#475569', fontSize: 11, marginLeft: 5 }}>· {quotesAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span> : null}
           </button>
           <button onClick={openAdd} style={btnPrimary}>+ Add Trade</button>
         </div>
@@ -262,10 +264,16 @@ export default function TradeTracker() {
                       if (quotesLoading && !Object.keys(liveQuotes).length)
                         return <span style={{ color: '#475569', fontSize: 11 }}>…</span>;
                       if (upnl == null) return <span style={{ color: '#475569' }}>—</span>;
+                      // Determine if we used a live mid or fell back to last traded price
+                      const legExpiry = t.leg1_expiry || t.exp_date;
+                      const occ1 = buildOCCSymbol(t.ticker, legExpiry, t.leg1_type, t.leg1_strike);
+                      const q = occ1 ? liveQuotes[occ1] : null;
+                      const isMid = q && q.bid > 0 && q.ask > 0;
+                      const label = isMid ? '~' : 'last';
                       return (
                         <span style={{ ...mono, fontWeight: 700, fontSize: 12, color: upnl >= 0 ? '#34d399' : '#fb923c' }}
-                              title="Unrealized P&L (15-min delayed quotes)">
-                          ~{upnl >= 0 ? '+' : '-'}${Math.abs(upnl).toFixed(0)}
+                              title={isMid ? 'Unrealized P&L — mid price (~15 min delayed)' : 'Unrealized P&L — last traded price (market closed)'}>
+                          {label}{upnl >= 0 ? '+' : '-'}${Math.abs(upnl).toFixed(0)}
                         </span>
                       );
                     })() : pnl != null
