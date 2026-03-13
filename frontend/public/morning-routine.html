@@ -606,11 +606,46 @@
       <div class="header-subtitle">Convert the Vert — Pre-Market Checklist</div>
     </div>
   </div>
-  <div style="text-align:right;">
-    <div class="clock" id="clock">--:--:--</div>
-    <div class="clock-label">Pacific Time</div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="text-align:right;">
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="clock-label">Pacific Time</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <button onclick="saveBrief()" id="btnSave" style="
+        background:var(--accent);border:none;border-radius:4px;color:#fff;
+        font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.08em;
+        text-transform:uppercase;padding:6px 14px;cursor:pointer;">
+        ↑ SAVE BRIEF
+      </button>
+      <div id="saveStatus" style="font-size:10px;color:var(--text-mute);letter-spacing:0.05em;">not saved</div>
+    </div>
   </div>
 </header>
+
+<!-- DATE PICKER BAR -->
+<div style="
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:8px 24px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:52px;z-index:99;">
+  <span style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-mute);">
+    RECALL DATE
+  </span>
+  <input type="date" id="datePicker" style="
+    background:var(--bg);border:1px solid var(--border2);border-radius:4px;
+    color:var(--text);font-family:var(--mono);font-size:12px;padding:4px 10px;
+    outline:none;cursor:pointer;" onchange="loadBriefForDate(this.value)" />
+  <button onclick="goToday()" style="
+    background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text-mute);
+    font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.08em;
+    text-transform:uppercase;padding:4px 10px;cursor:pointer;">TODAY</button>
+  <span id="viewingBadge" style="
+    font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    padding:2px 8px;border-radius:3px;display:none;
+    background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.3);">
+    VIEWING PAST ENTRY
+  </span>
+</div>
 
 <div class="progress-bar">
   <div class="progress-fill" id="progressFill" style="width:0%"></div>
@@ -1171,6 +1206,146 @@
 
   // ─── INIT ───
   loadState();
+  initDatePicker();
+
+  // ─── API / PERSISTENCE ───────────────────────────────────────────────────────
+
+  const API = 'https://options-tracker-worker.tcx86-dev.workers.dev';
+
+  function getToken() {
+    return localStorage.getItem('token');
+  }
+
+  function todayStr() {
+    return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+  }
+
+  function setStatus(msg, color) {
+    const el = document.getElementById('saveStatus');
+    el.textContent = msg;
+    el.style.color = color || 'var(--text-mute)';
+  }
+
+  function initDatePicker() {
+    document.getElementById('datePicker').value = todayStr();
+  }
+
+  function goToday() {
+    const today = todayStr();
+    document.getElementById('datePicker').value = today;
+    document.getElementById('viewingBadge').style.display = 'none';
+    loadState(); // restore localStorage (today's working state)
+    setStatus('not saved', 'var(--text-mute)');
+  }
+
+  async function saveBrief() {
+    const token = getToken();
+    if (!token) {
+      setStatus('not logged in — open Trade Tracker to log in first', 'var(--red)');
+      return;
+    }
+
+    const btn = document.getElementById('btnSave');
+    btn.textContent = 'SAVING…';
+    btn.disabled = true;
+
+    const steps = Array.from(document.querySelectorAll('.step')).map(s => s.classList.contains('done'));
+
+    const payload = {
+      date:       todayStr(),
+      es_high:    parseFloat(document.getElementById('esHigh').value) || null,
+      es_low:     parseFloat(document.getElementById('esLow').value)  || null,
+      es_dir:     document.getElementById('esDir').value || null,
+      vix_input:  parseFloat(document.getElementById('vixInput').value) || null,
+      gex_regime: currentRegime,
+      gex_plus:   parseFloat(document.getElementById('gexPlus').value)  || null,
+      gex_minus:  parseFloat(document.getElementById('gexMinus').value) || null,
+      gex_wall:   parseFloat(document.getElementById('gexWall').value)  || null,
+      gex_trans:  parseFloat(document.getElementById('gexTrans').value) || null,
+      synthesis:  document.getElementById('synthesis').textContent || null,
+      steps:      JSON.stringify(steps),
+    };
+
+    try {
+      const res = await fetch(`${API}/api/morning-brief`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      setStatus(`saved at ${now}`, 'var(--green)');
+    } catch (e) {
+      setStatus(`save failed: ${e.message}`, 'var(--red)');
+    } finally {
+      btn.textContent = '↑ SAVE BRIEF';
+      btn.disabled = false;
+    }
+  }
+
+  async function loadBriefForDate(date) {
+    if (!date) return;
+    const today = todayStr();
+    const badge = document.getElementById('viewingBadge');
+
+    if (date === today) { goToday(); return; }
+
+    const token = getToken();
+    if (!token) {
+      setStatus('not logged in — open Trade Tracker to log in first', 'var(--red)');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/morning-brief?date=${date}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { brief } = await res.json();
+
+      if (!brief) {
+        badge.textContent = 'NO ENTRY FOR THIS DATE';
+        badge.style.background = 'rgba(239,68,68,0.1)';
+        badge.style.color = 'var(--red)';
+        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+        badge.style.display = 'inline-block';
+        setStatus('', '');
+        return;
+      }
+
+      // Populate all fields from saved brief
+      if (brief.es_high  != null) document.getElementById('esHigh').value   = brief.es_high;
+      if (brief.es_low   != null) document.getElementById('esLow').value    = brief.es_low;
+      if (brief.es_dir)           document.getElementById('esDir').value    = brief.es_dir;
+      if (brief.vix_input != null){ document.getElementById('vixInput').value = brief.vix_input; updateVIX(brief.vix_input); }
+      if (brief.gex_regime)       setRegime(brief.gex_regime);
+      if (brief.gex_plus  != null) document.getElementById('gexPlus').value  = brief.gex_plus;
+      if (brief.gex_minus != null) document.getElementById('gexMinus').value = brief.gex_minus;
+      if (brief.gex_wall  != null) document.getElementById('gexWall').value  = brief.gex_wall;
+      if (brief.gex_trans != null) document.getElementById('gexTrans').value = brief.gex_trans;
+      if (brief.synthesis)        { document.getElementById('synthesis').textContent = brief.synthesis; saveSynthesis(); }
+      calcRange();
+
+      if (brief.steps) {
+        try {
+          const states = JSON.parse(brief.steps);
+          const stepEls = document.querySelectorAll('.step');
+          states.forEach((done, i) => {
+            if (stepEls[i]) stepEls[i].classList.toggle('done', !!done);
+          });
+        } catch(e) {}
+      }
+
+      badge.textContent = 'VIEWING PAST ENTRY';
+      badge.style.background = 'rgba(245,158,11,0.15)';
+      badge.style.color = 'var(--amber)';
+      badge.style.borderColor = 'rgba(245,158,11,0.3)';
+      badge.style.display = 'inline-block';
+      setStatus(`loaded ${date}`, 'var(--accent2)');
+    } catch(e) {
+      setStatus(`load failed: ${e.message}`, 'var(--red)');
+    }
+  }
 </script>
 </body>
 </html>

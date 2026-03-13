@@ -122,6 +122,42 @@ async function handleDeleteTrade(env, id) {
   return json({ success: true });
 }
 
+// ─── Morning Brief handlers ───────────────────────────────────────────────────
+
+const BRIEF_FIELDS = [
+  'es_high','es_low','es_dir','vix_input','gex_regime',
+  'gex_plus','gex_minus','gex_wall','gex_trans','synthesis','steps',
+];
+
+async function handleGetBrief(request, env) {
+  const url  = new URL(request.url);
+  const date = url.searchParams.get('date');
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return err('date param required (YYYY-MM-DD)');
+  const row = await env.DB.prepare('SELECT * FROM morning_briefs WHERE date = ?').bind(date).first();
+  return json({ brief: row ?? null });
+}
+
+async function handleGetBriefDates(env) {
+  const { results } = await env.DB.prepare(
+    'SELECT date FROM morning_briefs ORDER BY date DESC'
+  ).all();
+  return json({ dates: results.map(r => r.date) });
+}
+
+async function handleSaveBrief(request, env) {
+  const body = await request.json();
+  const date = body.date;
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return err('date required (YYYY-MM-DD)');
+  const values = BRIEF_FIELDS.map(f => body[f] ?? null);
+  const sets   = BRIEF_FIELDS.map(f => `${f} = ?`).join(', ');
+  await env.DB.prepare(
+    `INSERT INTO morning_briefs (date, ${BRIEF_FIELDS.join(', ')}, updated_at)
+     VALUES (?, ${BRIEF_FIELDS.map(() => '?').join(', ')}, datetime('now'))
+     ON CONFLICT(date) DO UPDATE SET ${sets}, updated_at = datetime('now')`
+  ).bind(date, ...values, ...values).run();
+  return json({ success: true });
+}
+
 // ─── Main fetch handler ───────────────────────────────────────────────────────
 
 export default {
@@ -145,6 +181,14 @@ export default {
         await verifyJWT(auth.slice(7), env.JWT_SECRET);
       } catch (e) {
         return err(e.message, 401);
+      }
+
+      // Protected: morning briefs
+      if (url.pathname === '/api/morning-brief/dates' && request.method === 'GET')
+        return handleGetBriefDates(env);
+      if (url.pathname === '/api/morning-brief') {
+        if (request.method === 'GET')  return handleGetBrief(request, env);
+        if (request.method === 'POST') return handleSaveBrief(request, env);
       }
 
       // Protected: trades collection

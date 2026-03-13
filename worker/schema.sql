@@ -20,3 +20,20 @@ CREATE TABLE IF NOT EXISTS trades (
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS morning_briefs (
+  date       TEXT PRIMARY KEY,
+  es_high    REAL,
+  es_low     REAL,
+  es_dir     TEXT,
+  vix_input  REAL,
+  gex_regime TEXT,
+  gex_plus   REAL,
+  gex_minus  REAL,
+  gex_wall   REAL,
+  gex_trans  REAL,
+  synthesis  TEXT,
+  steps      TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
