@@ -1,6 +1,43 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchTrades, deleteTrade, updateTrade } from './api';
+import { fetchTrades, deleteTrade, updateTrade, fetchOptionQuotes } from './api';
 import TradeForm from './TradeForm';
+
+// Build an OCC option symbol: e.g. GLD260220P00420000
+function buildOCCSymbol(ticker, expiry, right, strike) {
+  if (!ticker || !expiry || !right || !strike) return null;
+  const clean = String(expiry).replace(/-/g, ''); // YYYYMMDD
+  if (clean.length !== 8) return null;
+  const yymmdd    = clean.slice(2);               // YYMMDD
+  const strikeInt = Math.round(parseFloat(strike) * 1000);
+  if (isNaN(strikeInt)) return null;
+  return `${ticker.toUpperCase()}${yymmdd}${right}${strikeInt.toString().padStart(8, '0')}`;
+}
+
+// Compute unrealized P&L for an open trade given live quote map
+function computeUnrealizedPnL(trade, quotes) {
+  const contracts = parseFloat(trade.contracts);
+  if (isNaN(contracts)) return null;
+  let currentNetValue = 0;
+  let anyLeg = false;
+  for (let i = 1; i <= 4; i++) {
+    const strike = trade[`leg${i}_strike`];
+    const type   = trade[`leg${i}_type`];
+    const action = trade[`leg${i}_action`];
+    if (!strike || !type || !action) continue;
+    const expiry = trade[`leg${i}_expiry`] || trade.exp_date;
+    const occ    = buildOCCSymbol(trade.ticker, expiry, type, strike);
+    if (!occ) continue;
+    const q = quotes[occ];
+    if (!q || q.mid == null) return null; // need all legs to compute
+    // Cost to close: SELL legs bought back (+), BUY legs sold (-)
+    currentNetValue += action === 'SELL' ? q.mid : -q.mid;
+    anyLeg = true;
+  }
+  if (!anyLeg) return null;
+  const netPremium = parseFloat(trade.net_premium);
+  if (isNaN(netPremium)) return null;
+  return (netPremium - currentNetValue) * contracts * 100;
+}
 
 const ACCOUNTS  = ['Moomoo', 'IBKR', 'TradeStation'];
 const STATUSES  = ['open', 'closed', 'expired'];
@@ -24,6 +61,8 @@ export default function TradeTracker() {
   const [sortDir,       setSortDir]       = useState('desc');
   const [closingTrade,  setClosingTrade]  = useState(null);
   const [summary,       setSummary]       = useState({ total: 0, wins: 0, losses: 0, winCount: 0, lossCount: 0, count: 0 });
+  const [liveQuotes,    setLiveQuotes]    = useState({});
+  const [quotesLoading, setQuotesLoading] = useState(false);
 
   // Separate fetch for P&L scorecard — all closed/expired for the selected account
   const loadSummary = useCallback(async () => {
@@ -50,6 +89,31 @@ export default function TradeTracker() {
   }, [filterAccount]);
 
   useEffect(() => { loadSummary(); }, [loadSummary]);
+
+  const loadQuotes = useCallback(async () => {
+    const openTrades = trades.filter(t => t.status === 'open');
+    if (!openTrades.length) { setLiveQuotes({}); return; }
+    const symbols = new Set();
+    for (const t of openTrades) {
+      for (let i = 1; i <= 4; i++) {
+        const strike = t[`leg${i}_strike`];
+        const type   = t[`leg${i}_type`];
+        const action = t[`leg${i}_action`];
+        if (!strike || !type || !action) continue;
+        const occ = buildOCCSymbol(t.ticker, t[`leg${i}_expiry`] || t.exp_date, type, strike);
+        if (occ) symbols.add(occ);
+      }
+    }
+    if (!symbols.size) return;
+    setQuotesLoading(true);
+    try {
+      const data = await fetchOptionQuotes([...symbols]);
+      setLiveQuotes(data);
+    } catch { /* non-critical */ }
+    finally { setQuotesLoading(false); }
+  }, [trades]);
+
+  useEffect(() => { loadQuotes(); }, [loadQuotes]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -138,6 +202,9 @@ export default function TradeTracker() {
             <option value="">All Statuses</option>
             {STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
+          <button onClick={loadQuotes} disabled={quotesLoading} title="Refresh live option quotes (~15 min delayed)" style={{ ...btnPrimary, background: 'none', border: '1px solid #334155', color: quotesLoading ? '#475569' : '#7dd3fc', fontSize: 13, padding: '7px 12px' }}>
+            {quotesLoading ? '…' : '↻'} Quotes
+          </button>
           <button onClick={openAdd} style={btnPrimary}>+ Add Trade</button>
         </div>
       </div>
@@ -190,7 +257,18 @@ export default function TradeTracker() {
                   <td style={tdStyle}><span style={statusBadge(t.status)}>{t.status}</span></td>
                   <td style={{ ...tdStyle, ...mono }}>{t.close_date || '—'}</td>
                   <td style={tdStyle}>
-                    {pnl != null
+                    {t.status === 'open' ? (() => {
+                      const upnl = computeUnrealizedPnL(t, liveQuotes);
+                      if (quotesLoading && !Object.keys(liveQuotes).length)
+                        return <span style={{ color: '#475569', fontSize: 11 }}>…</span>;
+                      if (upnl == null) return <span style={{ color: '#475569' }}>—</span>;
+                      return (
+                        <span style={{ ...mono, fontWeight: 700, fontSize: 12, color: upnl >= 0 ? '#34d399' : '#fb923c' }}
+                              title="Unrealized P&L (15-min delayed quotes)">
+                          ~{upnl >= 0 ? '+' : '-'}${Math.abs(upnl).toFixed(0)}
+                        </span>
+                      );
+                    })() : pnl != null
                       ? <span style={{ ...mono, fontWeight: 700, color: pnl >= 0 ? '#4ade80' : '#f87171' }}>
                           {pnl >= 0 ? '+' : ''}${pnl.toFixed(0)}
                         </span>

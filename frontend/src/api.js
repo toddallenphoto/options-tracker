@@ -54,3 +54,8 @@ export async function deleteTrade(id) {
   const res = await apiFetch(`/api/trades/${id}`, { method: 'DELETE' });
   return res.json();
 }
+
+export async function fetchOptionQuotes(symbols) {
+  const res = await apiFetch(`/api/option-quote?symbols=${symbols.join(',')}`);
+  return res.json();
+}

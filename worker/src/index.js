@@ -122,6 +122,48 @@ async function handleDeleteTrade(env, id) {
   return json({ success: true });
 }
 
+// ─── Option quote proxy (Yahoo Finance, ~15-min delayed) ─────────────────────
+
+async function handleOptionQuote(request) {
+  const url     = new URL(request.url);
+  const symbols = url.searchParams.get('symbols');
+  if (!symbols) return err('symbols param required');
+
+  const yahooUrl = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`;
+
+  let res;
+  try {
+    res = await fetch(yahooUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://finance.yahoo.com/',
+      },
+    });
+  } catch (e) {
+    return err(`Upstream fetch failed: ${e.message}`, 502);
+  }
+
+  if (!res.ok) return err(`Yahoo Finance returned ${res.status}`, 502);
+
+  const data = await res.json();
+  const results = {};
+
+  for (const q of data?.quoteResponse?.result || []) {
+    const hasBidAsk = q.bid != null && q.ask != null && q.bid > 0 && q.ask > 0;
+    const mid = hasBidAsk ? (q.bid + q.ask) / 2 : (q.regularMarketPrice ?? null);
+    results[q.symbol] = {
+      bid:  q.bid  ?? null,
+      ask:  q.ask  ?? null,
+      last: q.regularMarketPrice ?? null,
+      mid,
+    };
+  }
+
+  return json(results);
+}
+
 // ─── Morning Brief handlers ───────────────────────────────────────────────────
 
 const BRIEF_FIELDS = [
@@ -182,6 +224,10 @@ export default {
       } catch (e) {
         return err(e.message, 401);
       }
+
+      // Protected: option quotes proxy
+      if (url.pathname === '/api/option-quote' && request.method === 'GET')
+        return handleOptionQuote(request);
 
       // Protected: morning briefs
       if (url.pathname === '/api/morning-brief/dates' && request.method === 'GET')
